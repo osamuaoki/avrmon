@@ -25,7 +25,9 @@ R  addr0  addr1  read sram and print (binary hex ~hex ascii)
 RS addr0  addr1  read sram and print (hexdump ascii)
 RP addr0  addr1  read program memory and print (hexdump ascii)
 RE addr0  addr1  read eeprom and print (binary hex ~hex ascii)
-W  val    addr   write sram and verify result
+W  val    addr   write sram and verify result: `=`
+WA val    addr   write sram as and-value and verify result: `&=`
+WP val    addr   write sram as or-value and verify result: `|=`
 
 MASK             set mask values via dialog
 D                display all digital ports (DDR/PORT/PIN-ABC)

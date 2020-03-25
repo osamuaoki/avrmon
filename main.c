@@ -645,6 +645,14 @@ static void write_sram(uint16_t addr, uint8_t value) {
   _SFR_MEM8(addr) = value;
 }
 
+static void write_and_sram(uint16_t addr, uint8_t value) {
+  _SFR_MEM8(addr) &= value;
+}
+
+static void write_or_sram(uint16_t addr, uint8_t value) {
+  _SFR_MEM8(addr) |= value;
+}
+
 static uint8_t read_flash(uint16_t addr) { return pgm_read_byte(addr); }
 
 void pullup_port(uint8_t mask[]) {
@@ -1101,6 +1109,28 @@ int main(void) {
           if (addr_w0 < MIN_SRAM) break;  // ignore
           if (addr_w0 > MAX_SRAM) break;  // ignore
           write_sram(addr_w0, val);
+          print_bindump(addr_w0, addr_w0, &read_sram);
+          addr_w0++;
+          if (addr_w0 > MAX_SRAM) addr_w0 = MIN_SRAM;
+          print_bindump(addr_w0, addr_w0, &read_sram);
+        } else if (!strcmp_P(token_sub1, PSTR("WA"))) {
+          // write to SRAM (bindump) progressive location
+          if (token_sub2 != NULL) val = str2byte(token_sub2);
+          if (token_sub3 != NULL) addr_w0 = str2word(token_sub3);
+          if (addr_w0 < MIN_SRAM) break;  // ignore
+          if (addr_w0 > MAX_SRAM) break;  // ignore
+          write_and_sram(addr_w0, val);
+          print_bindump(addr_w0, addr_w0, &read_sram);
+          addr_w0++;
+          if (addr_w0 > MAX_SRAM) addr_w0 = MIN_SRAM;
+          print_bindump(addr_w0, addr_w0, &read_sram);
+        } else if (!strcmp_P(token_sub1, PSTR("WO"))) {
+          // write to SRAM (bindump) progressive location
+          if (token_sub2 != NULL) val = str2byte(token_sub2);
+          if (token_sub3 != NULL) addr_w0 = str2word(token_sub3);
+          if (addr_w0 < MIN_SRAM) break;  // ignore
+          if (addr_w0 > MAX_SRAM) break;  // ignore
+          write_or_sram(addr_w0, val);
           print_bindump(addr_w0, addr_w0, &read_sram);
           addr_w0++;
           if (addr_w0 > MAX_SRAM) addr_w0 = MIN_SRAM;
