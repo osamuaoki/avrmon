@@ -1,0 +1,18 @@
+// set mcu type
+#define MCU @@@MCU@@@
+
+// set cpu frequency
+#define F_CPU @@@F_CPU@@@UL
+
+// Usable Baud Rate ... 9600 14400 19200 28800 38400 57600 2%
+#define BAUD @@@BAUD@@@
+
+// buffer size must be shorter then 255
+#define BUFSIZE 127
+
+// Verbose program dialogue
+#define VERBOSE
+
+// mark unused code secrion (define only for test/debug)
+#undef DEBUG_MON
+
