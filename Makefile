@@ -43,9 +43,12 @@
 # MCU name, you MUST set this to match the board you are using
 # type "make clean" after changing this, so all files will be rebuilt
 #
-MCU = atmega328p        # Arduino uno/nano/...
-#MCU = atmega32u4       # Teensy 2.0
-#MCU = at90usb1286      # Teensy++ 2.0
+# Arduino uno/nano/...
+#MCU = atmega328p
+# Teensy 2.0
+MCU = atmega32u4
+# Teensy++ 2.0
+#MCU = at90usb1286
 
 
 # Processor frequency.
@@ -85,7 +88,7 @@ OBJDIR = .
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c
-#SRC +=	usb_serial.c
+SRC +=	usb_serial.c
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC =

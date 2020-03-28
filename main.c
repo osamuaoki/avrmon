@@ -23,16 +23,46 @@
 #include <util/delay.h>
 #include <util/setbaud.h>
 
+///////////////////////////////////////
 // HW dependent
-#if MCU == atmega324p
+///////////////////////////////////////
+#ifdef __AVR_ATmega328P__
 #define PORT_BGN B
 #define PORT_END E
+#define LED_CONFIG (DDRB |= (1 << 5))
+#define LED_ON (PORTB |= (1 << 5))
+#define LED_OFF (PORTB &= ~(1 << 5))
 // 32+64+160+2048 B SRAM
 #define MIN_SRAM 0x20
 #define MAX_SRAM 0x8ff
 // 32 KB FLASH
 #define MAX_FLASH 0x7fff
 #endif
+/////////////////////////////////////////
+#ifdef __AVR_ATmega32U4__
+#include "usb_serial.h"
+#define PORT_BGN B
+#define PORT_END E
+#define LED_CONFIG (DDRD |= (1 << 6))
+#define LED_ON (PORTD |= (1 << 6))
+#define LED_OFF (PORTD &= ~(1 << 6))
+#define CPU_PRESCALE(n) (CLKPR = 0x80, CLKPR = (n))
+#define CPU_16MHz 0x00
+#define CPU_8MHz 0x01
+#define CPU_4MHz 0x02
+#define CPU_2MHz 0x03
+#define CPU_1MHz 0x04
+#define CPU_500kHz 0x05
+#define CPU_250kHz 0x06
+#define CPU_125kHz 0x07
+#define CPU_62kHz 0x08
+// 32+64+160+2048 B SRAM
+#define MIN_SRAM 0x20
+#define MAX_SRAM 0x8ff
+// 32 KB FLASH
+#define MAX_FLASH 0x7fff
+#endif
+/////////////////////////////////////////
 //
 // Cliche to get CPP MACRO definition included as C quoted string
 #define _QS(a) #a
@@ -75,6 +105,7 @@
 // Initialize Character I/O with F_CPU/BAUD
 //
 static void init_comm(void) {
+#ifdef __AVR_ATmega328P__
   UBRR0H = UBRRH_VALUE;
   UBRR0L = UBRRL_VALUE;
 #if USE_2X
@@ -82,6 +113,8 @@ static void init_comm(void) {
 #else
   UCSR0A &= ~_BV(U2X0);
 #endif
+  LED_CONFIG;
+  LED_ON;
   // async, non-parity, 1-bit stop, 8-bit data
   UCSR0C = _BV(UCSZ01) | _BV(UCSZ00);
   // tx and rx enable
@@ -90,16 +123,36 @@ static void init_comm(void) {
   DDRB = DDRC = DDRD = 0;
   // pull-up for all
   PORTB = PORTC = PORTD = 0xff;
+#endif
+#ifdef __AVR_ATmega32U4__
+  CPU_PRESCALE(CPU_16MHz);
+  LED_CONFIG;
+  LED_ON;
+
+  // initialize the USB, and then wait for the host
+  // to set configuration.  If the Teensy is powered
+  // without a PC connected to the USB port, this
+  // will wait forever.
+  usb_init();
+  do {
+  } while (!usb_configured()); /* wait */
+  _delay_ms(1000);
+#endif
 }
 
 //
 // Character output
 //
 static void print_c(char c) {
+#ifdef __AVR_ATmega328P__
   // loop until UDRE0 bit is set in UCSR0A
   do {
   } while (!(UCSR0A & _BV(UDRE0)));
   UDR0 = c;
+#endif
+#ifdef __AVR_ATmega32U4__
+  usb_serial_putchar(c);
+#endif
 }
 
 //
@@ -213,16 +266,22 @@ static void print_hex4(uint16_t u) {
 //
 static uint8_t check_input(void) {
   char typed;
+#ifdef __AVR_ATmega328P__
   char __attribute__((unused)) c;  // unused intentionally
   typed = (UCSR0A & _BV(RXC0));
   if (typed) c = UDR0;  // discard typed character
-  return typed;         // true if tyoed
+#endif
+#ifdef __AVR_ATmega32U4__
+  typed = usb_serial_available();
+#endif
+  return typed;  // true if typed
 }
 //
 // Character input
 //
 static char input_char(void) {
   char c;
+#ifdef __AVR_ATmega328P__
   // loop until  RXC0 bit is set in UCSR0A
   do {
   } while (!(UCSR0A & _BV(RXC0)));
@@ -237,6 +296,17 @@ static char input_char(void) {
     if (c == '\r' || c == (char)0x1b) c = '\n';  // CR, ESC -> NL
     if (c >= 'a' && c <= 'z') c &= ~0x20;        // toupper
   }
+#endif
+#ifdef __AVR_ATmega32U4__
+  int16_t cc;
+  cc = usb_serial_getchar();
+  if (cc < 0) {
+    usb_serial_flush_input();
+    c = '\n';  // replace borked input with '\n'
+  } else {
+    c = cc & 0xff;
+  }
+#endif
   return c;
 }
 
@@ -602,13 +672,13 @@ static void analog_off(void) {
 
 void led_on(void) {
   print_sP(PSTR("LED ON\n"));
-  DDRB |= 0b00100000;
-  PORTB |= 0b00100000;
+  LED_CONFIG;
+  LED_ON;
 }
 void led_off(void) {
   print_sP(PSTR("LED OFF\n"));
-  DDRB |= 0b00100000;
-  PORTB &= ~0b00100000;
+  LED_CONFIG;
+  LED_OFF;
 }
 void led_blink(uint16_t t) {
   double tt;
@@ -617,14 +687,14 @@ void led_blink(uint16_t t) {
   print_hex4(t);
   print_crlf();
   do {
-    DDRB |= 0b00100000;
-    PORTB |= 0b00100000;
+    LED_CONFIG;
+    LED_ON;
     tt = t;
     do {
       _delay_ms(50);
       if (typed |= check_input()) break;
     } while (tt--);
-    PORTB &= ~0b00100000;
+    LED_OFF;
     tt = t;
     do {
       _delay_ms(50);
