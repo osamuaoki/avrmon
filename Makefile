@@ -88,7 +88,10 @@ OBJDIR = .
 
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c
+
+ifeq ($(MCU),atmega32u4)
 SRC +=	usb_serial.c
+endif
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC =

@@ -1,4 +1,4 @@
-# `avrmon`: Monitor for ATmega328P etc.
+# `avrmon`: Monitor for ATmega328P, ATmega32u4, etc.
 
 (C) 2020    Osamu Aoki <osamu@debian.org>, GPL 2.0+
 
@@ -68,4 +68,16 @@ This source comes with a customized WinAvr Makefile.
 * `make reformat`: reformat C source
 * `make term`: start `picocom`
 * `make run`: compile C source, program MCU, start terminal
+
+For ATmega328P, compile with:
+
+```
+ $ make clean; make MCU=atmega328p
+```
+
+For ATmega32u4, compile with:
+
+```
+ $ make clean; make MCU=atmega32u4
+```
 
