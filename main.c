@@ -24,7 +24,6 @@
 #include <util/setbaud.h>
 
 // HW dependent
-#if MCU == atmega324p
 #define PORT_BGN B
 #define PORT_END E
 // 32+64+160+2048 B SRAM
@@ -32,7 +31,6 @@
 #define MAX_SRAM 0x8ff
 // 32 KB FLASH
 #define MAX_FLASH 0x7fff
-#endif
 //
 // Cliche to get CPP MACRO definition included as C quoted string
 #define _QS(a) #a
