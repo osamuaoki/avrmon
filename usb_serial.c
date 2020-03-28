@@ -690,7 +690,7 @@ void usb_serial_flush_output(void) {
 // at full USB speed), but they are set by the host so we can
 // set them properly if we're converting the USB to a real serial
 // communication
-uint32_t usb_serial_get_baud(void) { return *(uint32_t *)cdc_line_coding; }
+uint32_t usb_serial_get_baud(void) { return (uint32_t)*cdc_line_coding; }
 uint8_t usb_serial_get_stopbits(void) { return cdc_line_coding[4]; }
 uint8_t usb_serial_get_paritytype(void) { return cdc_line_coding[5]; }
 uint8_t usb_serial_get_numbits(void) { return cdc_line_coding[6]; }
