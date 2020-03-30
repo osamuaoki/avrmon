@@ -26,41 +26,49 @@
 ///////////////////////////////////////
 // HW dependent
 ///////////////////////////////////////
-#ifdef __AVR_ATmega328P__
+#ifdef BOARD_nano
 #define PORT_BGN B
 #define PORT_END E
+// 32+64+160+2048 B SRAM (2KB)
+#define MIN_SRAM 0x20
+#define MAX_SRAM 0x8ff
+// 32 KB FLASH
+#define MAX_FLASH 0x7fff
 #define LED_CONFIG (DDRB |= (1 << 5))
 #define LED_ON (PORTB |= (1 << 5))
 #define LED_OFF (PORTB &= ~(1 << 5))
-// 32+64+160+2048 B SRAM
-#define MIN_SRAM 0x20
-#define MAX_SRAM 0x8ff
-// 32 KB FLASH
-#define MAX_FLASH 0x7fff
 #endif
 /////////////////////////////////////////
-#ifdef __AVR_ATmega32U4__
+#ifdef BOARD_teensy
 #include "usb_serial.h"
 #define PORT_BGN B
-#define PORT_END E
+#define PORT_END F
+#define CPU_16MHz 0x00
+#define CPU_PRESCALE (CLKPR = 0x80, CLKPR = CPU_16MHz)
+// 32+64+160+2048+512 B SRAM (2.5KB)
+#define MIN_SRAM 0x20
+#define MAX_SRAM 0xaff
+// 32 KB FLASH
+#define MAX_FLASH 0x7fff
 #define LED_CONFIG (DDRD |= (1 << 6))
 #define LED_ON (PORTD |= (1 << 6))
 #define LED_OFF (PORTD &= ~(1 << 6))
-#define CPU_PRESCALE(n) (CLKPR = 0x80, CLKPR = (n))
+#endif
+/////////////////////////////////////////
+#ifdef BOARD_teensypp
+#include "usb_serial.h"
+#define PORT_BGN A
+#define PORT_END F
 #define CPU_16MHz 0x00
-#define CPU_8MHz 0x01
-#define CPU_4MHz 0x02
-#define CPU_2MHz 0x03
-#define CPU_1MHz 0x04
-#define CPU_500kHz 0x05
-#define CPU_250kHz 0x06
-#define CPU_125kHz 0x07
-#define CPU_62kHz 0x08
-// 32+64+160+2048 B SRAM
+#define CPU_PRESCALE (CLKPR = 0x80, CLKPR = CPU_16MHz)
+// 32+64+160+2048 B SRAM (8KB)
 #define MIN_SRAM 0x20
-#define MAX_SRAM 0x8ff
-// 32 KB FLASH
-#define MAX_FLASH 0x7fff
+#define MAX_SRAM 0x20ff
+// 64 KB FLASH addressable by BYTE (out of 128KB addressable by WORD)
+#define MAX_FLASH 0xffff
+#define LED_CONFIG (DDRD |= (1 << 6))
+#define LED_ON (PORTD |= (1 << 6))
+#define LED_OFF (PORTD &= ~(1 << 6))
 #endif
 /////////////////////////////////////////
 //
@@ -105,7 +113,7 @@
 // Initialize Character I/O with F_CPU/BAUD
 //
 static void init_comm(void) {
-#ifdef __AVR_ATmega328P__
+#ifdef IO_SERIAL
   UBRR0H = UBRRH_VALUE;
   UBRR0L = UBRRL_VALUE;
 #if USE_2X
@@ -124,8 +132,8 @@ static void init_comm(void) {
   // pull-up for all
   PORTB = PORTC = PORTD = 0xff;
 #endif
-#ifdef __AVR_ATmega32U4__
-  CPU_PRESCALE(CPU_16MHz);
+#ifdef IO_USB
+  CPU_PRESCALE;
   LED_CONFIG;
   LED_ON;
 
@@ -144,13 +152,13 @@ static void init_comm(void) {
 // Character output
 //
 static void print_c(char c) {
-#ifdef __AVR_ATmega328P__
+#ifdef IO_SERIAL
   // loop until UDRE0 bit is set in UCSR0A
   do {
   } while (!(UCSR0A & _BV(UDRE0)));
   UDR0 = c;
 #endif
-#ifdef __AVR_ATmega32U4__
+#ifdef IO_USB
   usb_serial_putchar(c);
 #endif
 }
@@ -266,12 +274,12 @@ static void print_hex4(uint16_t u) {
 //
 static uint8_t check_input(void) {
   char typed;
-#ifdef __AVR_ATmega328P__
+#ifdef IO_SERIAL
   char __attribute__((unused)) c;  // unused intentionally
   typed = (UCSR0A & _BV(RXC0));
   if (typed) c = UDR0;  // discard typed character
 #endif
-#ifdef __AVR_ATmega32U4__
+#ifdef IO_USB
   typed = usb_serial_available();
 #endif
   return typed;  // true if typed
@@ -281,7 +289,7 @@ static uint8_t check_input(void) {
 //
 static char input_char(void) {
   char c;
-#ifdef __AVR_ATmega328P__
+#ifdef IO_SERIAL
   // loop until  RXC0 bit is set in UCSR0A
   do {
   } while (!(UCSR0A & _BV(RXC0)));
@@ -297,7 +305,7 @@ static char input_char(void) {
     if (c >= 'a' && c <= 'z') c &= ~0x20;        // toupper
   }
 #endif
-#ifdef __AVR_ATmega32U4__
+#ifdef IO_USB
   int16_t cc;
   cc = usb_serial_getchar();
   if (cc < 0) {
@@ -633,36 +641,106 @@ static uint16_t str2word(char *s) {
 /////////////////////////////////////////////////////////////////////////////
 void prep_m(volatile uint8_t mask[]) {
   print_sP(PSTR("Monitor all digital inputs\n"));
-  DDRB = 0x00;
-  DDRC = 0x00;
-  DDRD = 0x00;
-  print_sP(PSTR("Mask for usable RW PORT\n"));
+#ifdef BOARD_nano
   // PB5     -- used by Led
   // PB6 PB7 -- used by Xtal
   // PC6     -- used by /RESET
   // PC7     -- not writable
   // PD0 PD1 -- used by serial I/O
+  DDRB = 0b00100000;
+  DDRC = 0x00;
+  DDRD = 0x00;
   mask[0] = 0b00011111;
   mask[1] = 0b00111111;
   mask[2] = 0b11111100;
+#endif
+#ifdef BOARD_teensy
+  // PB*    -- available
+  // PC6 PC7 -- available, Other PC* No
+  // PD6    -- used by Led, Other PD* available
+  // PE2    -- used by HWB (GND 1K)
+  // PE6    -- available
+  // PE0, PE1, PE3, PE4, PE5, PE7 -- No
+  // PF2 PF3 -- No, other PF* available
+  DDRB = 0x00;
+  DDRC = 0x00;
+  DDRD = 0b01000000;
+  DDRE = 0x00;
+  DDRF = 0x00;
+  mask[0] = 0b11111111;
+  mask[1] = 0b11000000;
+  mask[2] = 0b10111100;
+  mask[3] = 0b01000000;
+  mask[4] = 0b11110011;
+#endif
+#ifdef BOARD_teensypp
+  // PA*    -- available
+  // PB*    -- available
+  // PC*    -- available
+  // PD6    -- used by Led, Other PD* available
+  // PE2    -- used by HWB (GND 1K)
+  // PE3    -- IUID
+  // PE0, PE1, PE4, PE5, PE6, PE7  -- available
+  // PF*    -- available
+  DDRA = 0x00;
+  DDRB = 0x00;
+  DDRC = 0x00;
+  DDRD = 0b01000000;
+  DDRE = 0x00;
+  DDRF = 0x00;
+  mask[0] = 0b11111111;
+  mask[1] = 0b11111111;
+  mask[2] = 0b11111111;
+  mask[3] = 0b10111111;
+  mask[4] = 0b11110011;
+  mask[5] = 0b11111111;
+#endif
+  print_sP(PSTR("Mask for usable RW PORT\n"));
 }
 
 void prep_s(volatile uint8_t mask[]) {
   print_sP(PSTR("Scan keyboard matrix.  (Top down with USB left\n"));
-  print_sP(PSTR("        DDR: OUT = near side: PC0-PC5, PB5=LED\n"));
-  print_sP(PSTR("        DDR: IN  = far  side: PB* PD*\n"));
+#ifdef BOARD_nano
+  print_sP(PSTR("  DDR: OUT = near: PC0-PC5, PB5=LED\n"));
+  print_sP(PSTR("  DDR: IN  = far : PB* PD*\n"));
   DDRB = 0b00100000;
   DDRC = 0b00111111;
   DDRD = 0b00000000;
-  print_sP(PSTR("Mask for usable RW PORT\n"));
-  // PB5     -- used by Led
-  // PB6 PB7 -- used by Xtal
-  // PC6     -- used by /RESET
-  // PC7     -- not writable
-  // PD0 PD1 -- used by serial I/O
   mask[0] = 0b00011111;
   mask[1] = 0b00111111;
   mask[2] = 0b11111100;
+#endif
+#ifdef BOARD_teensy
+  print_sP(PSTR("  DDR: OUT = near: PB0-PB3 PB7 PD0-PD3 PC6-PC7/ far = PD6=LED\n"));
+  print_sP(PSTR("  DDR: IN  = far : PF0-PF1 PF4-PF7 PB6-PB4 PD7/ in = PE6/ side = PD4 PD5\n"));
+  DDRB = 0b10001111;
+  DDRC = 0b11000000;
+  DDRD = 0b01001111;
+  DDRE = 0b00000000;
+  DDRF = 0b00000000;
+  mask[0] = 0b11111111;
+  mask[1] = 0b11000000;
+  mask[2] = 0b00111111;
+  mask[3] = 0b01000000;
+  mask[4] = 0b11110011;
+#endif
+#ifdef BOARD_teensypp
+  print_sP(PSTR("  DDR: OUT = near: PB7 PD0-PD5 PD7 PE0-PE1 PC0-PC7/ PD6=LED\n"));
+  print_sP(PSTR("  DDR: IN  = far : PB0-PB6 PE7-PE6 PF0-PF7 in = PE4-PE5 PA0-PA7\n"));
+  DDRA = 0b00000000;
+  DDRB = 0b10000000;
+  DDRC = 0b11111111;
+  DDRD = 0b11111111;
+  DDRE = 0b00000011;
+  DDRF = 0b00000000;
+  mask[0] = 0b11111111;
+  mask[1] = 0b11111111;
+  mask[2] = 0b11111111;
+  mask[3] = 0b10111111;
+  mask[4] = 0b11110011;
+  mask[5] = 0b11111111;
+#endif
+  print_sP(PSTR("Mask for usable RW PORT\n"));
 }
 
 static void analog_off(void) {
@@ -1081,7 +1159,8 @@ int main(void) {
   init_comm();
   print_sP(PSTR("AVRmon v 0.1\n"));
   val = _SFR_MEM8(addr_w0);
-  print_sP(PSTR("  mcu=" QS(MCU) " baud=" QS(BAUD) " f_cpu=" QS(F_CPU) "\n"));
+  print_sP(PSTR("  mcu=" QS(MCU) " f_cpu=" QS(F_CPU) "\n"));
+  print_sP(PSTR("  board=" QS(BOARD) " baud=" QS(BAUD) "\n"));
   print_sP(PSTR("  GPL 2.0+, Copyright 2020, <osamu@debian.org>\n\n"));
   //
   // display mcu states

@@ -69,15 +69,27 @@ This source comes with a customized WinAvr Makefile.
 * `make term`: start `picocom`
 * `make run`: compile C source, program MCU, start terminal
 
-For ATmega328P, compile with:
+For ATmega328P on Arduino Nano/Arduino Uno, compile and program with AVRISP
+mkII via ISP:
 
 ```
- $ make clean; make MCU=atmega328p
+ $ make BOARD=nano PROGRAMMER=avrisp2 program
 ```
 
-For ATmega32u4, compile with:
+For ATmega32u4 on teensey 2.0, compile and program with AVRISP
+mkII via ISP:
 
 ```
- $ make clean; make MCU=atmega32u4
+ $ make BOARD=teensey PROGRAMMER=avrisp2 program
 ```
 
+For AT90USB1286 on teensey 2.0++, compile and program with AVRISP
+mkII via ISP:
+
+```
+ $ make BOARD=teenseypp PROGRAMMER=avrisp2 program
+```
+
+If using Arduino programmer, substitute as `PROGRAMMER=arduino`.
+
+If using LUFA HID programmer, substitute as `PROGRAMMER=hid`.

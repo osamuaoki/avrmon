@@ -38,18 +38,44 @@
 #
 # To rebuild project do "make clean" then "make all".
 #----------------------------------------------------------------------------
+#
+# Platform
+#
+# BOARD: nano, teensy, teensypp
+# (Use nano for Uno)
+BOARD ?= nano
+# PROGRAMMER: avrisp2 (USB AVRISP mkII), arduino (Serial/USB CDC),
+#             hid (USB HID LUFA), dfu (USB DFU flip1)
+PROGRAMMER ?= arduino
 
-
+#----------------------------------------------------------------------------
 # MCU name, you MUST set this to match the board you are using
 # type "make clean" after changing this, so all files will be rebuilt
 #
-# Arduino uno/nano/...
-#MCU = atmega328p
-# Teensy 2.0
+# Arduino nano
+ifeq ($(BOARD),nano)
+MCU = atmega328p
+IO_TYPE = SERIAL
+endif
+# Teensy 2.0 5V
+ifeq ($(BOARD),teensy)
 MCU = atmega32u4
-# Teensy++ 2.0
-#MCU = at90usb1286
+IO_TYPE = USB
+endif
+# Teensy++ 2.0 5V
+ifeq ($(BOARD),teensypp)
+MCU = at90usb1286
+IO_TYPE = USB
+endif
 
+ifneq ($(IO_TYPE),USB)
+ifeq ($(PROGRAMMER),hid)
+$(error "hid" programmer needs USB AVR.)
+endif
+ifeq ($(PROGRAMMER),dfu)
+$(error "dfu" programmer needs USB AVR.)
+endif
+endif
 
 # Processor frequency.
 #     This will define a symbol, F_CPU, in all source code files equal to the
@@ -89,7 +115,7 @@ OBJDIR = .
 # List C source files here. (C dependencies are automatically generated.)
 SRC = $(TARGET).c
 
-ifeq ($(MCU),atmega32u4)
+ifeq ($(IO_TYPE),USB)
 SRC +=	usb_serial.c
 endif
 
@@ -283,10 +309,18 @@ LDFLAGS += $(PRINTF_LIB) $(SCANF_LIB) $(MATH_LIB)
 # Type: avrdude -c ?
 # to get a full listing.
 #
+ifeq ($(PROGRAMMER),avrisp2)
+# Program via USB/AVRISP mkII/ISP connection
+AVRDUDE_PROGRAMMER = avrisp2
+endif
+ifeq ($(PROGRAMMER),arduino)
 # Program via USB/serial connection
 AVRDUDE_PROGRAMMER = arduino
-# Program via USB/AVRISP mkII/ISP connection
-#AVRDUDE_PROGRAMMER = avrisp2
+endif
+ifeq ($(PROGRAMMER),dfu)
+# Program via USB DFU connection (FLIP 1)
+AVRDUDE_PROGRAMMER = flip1
+endif
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
 AVRDUDE_PORT = /dev/ttyUSB0    # programmer connected to serial device
@@ -314,6 +348,15 @@ AVRDUDE_FLAGS += $(AVRDUDE_NO_VERIFY)
 AVRDUDE_FLAGS += $(AVRDUDE_VERBOSE)
 AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
 
+#---------------- Programming Options (dfu-programmer) ----------------
+
+# Programming hardware with DFU
+# !!! XXX FIXME XXX NO CODE XXX FIXME XXX !!!
+
+#---------------- Programming Options (hid_bootloader_cli/teensy_loader_cli)
+
+# Programming hardware with HID programmer
+HID_FLAGS = -v -mmcu=$(MCU) -f
 
 #---------------- Terminal Options (picocom) ----------------
 
@@ -363,6 +406,9 @@ SIZE = avr-size
 AR = avr-ar rcs
 NM = avr-nm
 AVRDUDE = avrdude
+DFU_PROGRAMMER = dfu-programmer
+#HID_PROGRAMMER = teensy_loader_cli
+HID_PROGRAMMER = hid_bootloader_cli
 REMOVE = rm -f
 REMOVEDIR = rm -rf
 COPY = cp
@@ -467,8 +513,11 @@ gccversion :
 
 # Program the device.
 program: $(TARGET).hex $(TARGET).eep
+ifneq ($(PROGRAMMER),hid)
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH) $(AVRDUDE_WRITE_EEPROM)
-
+else
+	$(HID_PROGRAMMER) $(HID_FLAGS) $(TARGET).hex
+endif
 
 # Generate avr-gdb config/init file which does the following:
 #     define the reset signal, load the target file, connect to target, and set
@@ -619,6 +668,8 @@ config.h : config.h.in
 		-e 's/@@@F_CPU@@@/$(F_CPU)/' \
 		-e 's/@@@MCU@@@/$(MCU)/' \
 		-e 's/@@@BAUD@@@/$(BAUD)/' \
+		-e 's/@@@BOARD@@@/$(BOARD)/' \
+		-e 's/@@@IO_TYPE@@@/$(IO_TYPE)/' \
 		$< > $@
 
 # Target: clean project.

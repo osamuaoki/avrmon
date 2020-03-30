@@ -7,6 +7,12 @@
 // Usable Baud Rate ... 9600 14400 19200 28800 38400 57600 2%
 #define BAUD @@@BAUD@@@
 
+// set IO type
+#define IO_@@@IO_TYPE@@@
+
+// set dev. board type  for LED
+#define BOARD_@@@BOARD@@@
+
 // buffer size must be shorter then 255
 #define BUFSIZE 127
 
