@@ -1,3 +1,6 @@
+// set board name
+#define BOARD @@@BOARD@@@
+
 // set mcu type
 #define MCU @@@MCU@@@
 
@@ -7,12 +10,87 @@
 // Usable Baud Rate ... 9600 14400 19200 28800 38400 57600 2%
 #define BAUD @@@BAUD@@@
 
+// set IO type
+#define IO_@@@IO_TYPE@@@
+
+// set dev. board type  for LED
+#define BOARD_@@@BOARD@@@
+
 // buffer size must be shorter then 255
 #define BUFSIZE 127
 
-// Verbose program dialogue
+// Verbose program dialogue (unless space limited, keep it verbose)
 #define VERBOSE
 
-// mark unused code secrion (define only for test/debug)
+// mark unused code section (define only for test/debug)
 #undef DEBUG_MON
 
+// buffer size of LED must be shorter then 255
+// 3 * (# of LEDs)
+#define LEDSIZE (3 * 10)
+///////////////////////////////////////
+// HW dependent
+///////////////////////////////////////
+#ifdef BOARD_nano
+#define PORT_BGN B
+#define PORT_END E
+#define N_PORTS 4
+#define CPU_PRESCALE
+// 32+64+160+2048 B SRAM (2KB)
+#define MIN_SRAM 0x20
+#define MAX_SRAM 0x8ff
+#define DATASIZE ( 1024 / 2)
+// 32 KB FLASH (program memory)
+#define MAX_FLASH 0x7fff
+#define LED_PIN "B5"
+#endif
+/////////////////////////////////////////
+#ifdef BOARD_teensy2
+#include "usb_serial.h"
+#define PORT_BGN B
+#define PORT_END F
+#define N_PORTS 5
+#define CPU_16MHz 0x00
+#define CPU_PRESCALE (CLKPR = 0x80, CLKPR = CPU_16MHz)
+// 32+64+160+2048+512 B SRAM (2.5KB)
+#define MIN_SRAM 0x20
+#define MAX_SRAM 0xaff
+#define DATASIZE ( 1536 / 2 )
+// 32 KB FLASH (program memory)
+#define MAX_FLASH 0x7fff
+#define LED_PIN "D6"
+#endif
+/////////////////////////////////////////
+#ifdef BOARD_teensy2pp
+#include "usb_serial.h"
+#define PORT_BGN A
+#define PORT_END F
+#define N_PORTS 6
+#define CPU_16MHz 0x00
+#define CPU_PRESCALE (CLKPR = 0x80, CLKPR = CPU_16MHz)
+// 32+64+160+2048 B SRAM (8KB)
+#define MIN_SRAM 0x20
+#define MAX_SRAM 0x20ff
+#define DATASIZE ( 4096 / 2 )
+// 64 KB FLASH (program memory) addressable by BYTE
+// device has 128KB but high memory area isn't accessible with this program
+#define MAX_FLASH 0xffff
+#define LED_PIN "D6"
+#endif
+/////////////////////////////////////////
+//
+// Cliche to get CPP MACRO definition included as C quoted string
+#define _QS(a) #a
+#define QS(a) _QS(a)
+// Cliche to get concatenated CPP MACRO definition
+#define _CAT(a, b) a##b
+#define CAT(a, b) _CAT(a, b)
+// Cliche to get char from a string: [0]
+#define PORT_BGN_CH QS(PORT_BGN)[0]
+#define PORT_END_CH QS(PORT_END)[0]
+// base port name
+#define DDR_0 CAT(DDR, PORT_BGN)
+#define PORT_0 CAT(PORT, PORT_BGN)
+#define PIN_0 CAT(PIN, PORT_BGN)
+// I/O registers indexed access
+#define IOREG(base, i) _SFR_MEM8(_SFR_ADDR(base) + 3 * i)

@@ -1,0 +1,4 @@
+#!/usr/bin/sh -e
+MKTARGET=${1:-program}
+MKBOARD=${2:-teensy2pp}
+make BOARD="$MKBOARD" PROGRAMMER=hid "$MKTARGET"
