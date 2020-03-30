@@ -121,8 +121,6 @@ static void init_comm(void) {
 #else
   UCSR0A &= ~_BV(U2X0);
 #endif
-  LED_CONFIG;
-  LED_ON;
   // async, non-parity, 1-bit stop, 8-bit data
   UCSR0C = _BV(UCSZ01) | _BV(UCSZ00);
   // tx and rx enable
@@ -133,10 +131,6 @@ static void init_comm(void) {
   PORTB = PORTC = PORTD = 0xff;
 #endif
 #ifdef IO_USB
-  CPU_PRESCALE;
-  LED_CONFIG;
-  LED_ON;
-
   // initialize the USB, and then wait for the host
   // to set configuration.  If the Teensy is powered
   // without a PC connected to the USB port, this
@@ -1156,6 +1150,9 @@ int main(void) {
   uint16_t addr_f1 = 0xff;  // end
   uint16_t addr_f2 = 0xff;  // range
   // initialize
+  CPU_PRESCALE;
+  LED_CONFIG;
+  LED_ON;
   init_comm();
   print_sP(PSTR("AVRmon v 0.1\n"));
   val = _SFR_MEM8(addr_w0);
