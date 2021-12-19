@@ -119,6 +119,8 @@ SRC +=	sub.c
 ifeq ($(IO_TYPE),USB)
 SRC +=	usb_serial.c
 endif
+SRC +=  light_ws2812.c
+
 
 # List C++ source files here. (C dependencies are automatically generated.)
 CPPSRC =

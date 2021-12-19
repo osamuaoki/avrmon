@@ -24,6 +24,7 @@
 #include <util/delay.h>
 #include <util/setbaud.h>
 
+#include "light_ws2812.h"
 //
 // Special MACROs defined in <avr/sfr_defs.h> called from <avr/io.h>
 //

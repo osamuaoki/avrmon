@@ -95,3 +95,22 @@
 #define PIN_0 CAT(PIN, PORT_BGN)
 // I/O registers indexed access
 #define IOREG(base, i) _SFR_MEM8(_SFR_ADDR(base) + 3 * i)
+///////////////////////////////////////////////////////////////////////
+// Define Reset time in µs. 
+//
+// This is the time the library spends waiting after writing the data.
+//
+// WS2813 needs 300 µs reset time
+// WS2812 and clones only need 50 µs
+//
+///////////////////////////////////////////////////////////////////////
+
+#define ws2812_resettime  300 
+
+///////////////////////////////////////////////////////////////////////
+// Define I/O pin
+///////////////////////////////////////////////////////////////////////
+
+
+#define ws2812_port D     // Data port 
+#define ws2812_pin  7     // Data out pin
