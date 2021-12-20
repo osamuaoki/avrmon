@@ -26,6 +26,7 @@
 #undef DEBUG_MON
 
 // buffer size of LED must be shorter then 255
+// This is # of RGB LEDs
 // 3 * (# of LEDs)
 #define LEDSIZE (3 * 10)
 ///////////////////////////////////////

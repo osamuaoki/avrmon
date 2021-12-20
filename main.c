@@ -393,6 +393,9 @@ void bit_pin(char *pin, char *mode) {
   if (pin[0] == 'P') {
     data_dump();
   }
+  print_sP(PSTR(" trigger_count="));
+  print_hex2(tcount);
+  print_crlf();
 }
 //
 // Initialize DDR (basically all input)
