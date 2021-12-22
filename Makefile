@@ -324,7 +324,11 @@ AVRDUDE_PROGRAMMER = flip1
 endif
 
 # com1 = serial port. Use lpt1 to connect to parallel port.
+ifeq ($(IO_TYPE),USB)
 AVRDUDE_PORT = /dev/ttyUSB0    # programmer connected to serial device
+else
+AVRDUDE_PORT = /dev/ttyACM0     # programmer connected to serial device
+endif
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
 #AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
