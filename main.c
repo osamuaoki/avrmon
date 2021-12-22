@@ -573,45 +573,6 @@ void bit_blink(uint16_t t) {
   print_sP(PSTR("BIT BLINK END\n"));
 }
 
-static void inline uunit_delay1(void) {
-  for (uint8_t i=uunit1; i>0; i--) {
-    // NOP
-    asm volatile(
-    "       nop\n\t"
-    );
-  }
-}
-static void inline uunit_delay3(void) {
-  for (uint8_t i=uunit3; i>0; i--) {
-    // NOP
-    asm volatile(
-    "       nop\n\t"
-    );
-  }
-}
-
-static void pixel_0(void) {
-    uunit_delay1();
-    _SFR_MEM8(addr_port) ^= ~_BV(addr_bit);
-    uunit_delay3();
-    _SFR_MEM8(addr_port) |= _BV(addr_bit);
-}
-
-static void pixel_1(void) {
-    uunit_delay3();
-    _SFR_MEM8(addr_port) ^= ~_BV(addr_bit);
-    uunit_delay1();
-    _SFR_MEM8(addr_port) |= _BV(addr_bit);
-}
-
-static void pixel_reset(void) {
-    _SFR_MEM8(addr_port) ^= ~_BV(addr_bit);
-    for (uint16_t i=330; i>0; i--) {
-      uunit_delay3();
-    }
-    _SFR_MEM8(addr_port) |= _BV(addr_bit);
-}
-
 void bit_pixel_dump(uint8_t xlen, uint8_t *x) {
   if ( xlen > LEDSIZE) xlen = LEDSIZE;
   uint8_t xxlen = xlen / 3;
@@ -688,10 +649,53 @@ uint8_t bit_pixel_set(char * token, uint8_t *x) {
       }
     } else {
       *x++ = (uint8_t) str2byte(buf);
-      i+=2;
+      i++;
     }
   }
   return i;
+}
+
+static void inline uunit_delay1(void) {
+  for (uint8_t i=uunit1; i>0; i--) {
+    // NOP
+    asm volatile(
+    "       nop\n\t"
+    );
+  }
+}
+static void inline uunit_delay3(void) {
+  for (uint8_t i=uunit3; i>0; i--) {
+    // NOP
+    asm volatile(
+    "       nop\n\t"
+    );
+  }
+}
+
+static void pixel_0(void) {
+    uunit_delay1();
+    _SFR_MEM8(addr_port) &= ~_BV(addr_bit);
+    uunit_delay3();
+    _SFR_MEM8(addr_port) |= _BV(addr_bit);
+}
+
+static void pixel_1(void) {
+    uunit_delay3();
+    _SFR_MEM8(addr_port) &= ~_BV(addr_bit);
+    uunit_delay1();
+    _SFR_MEM8(addr_port) |= _BV(addr_bit);
+}
+
+static void pixel_reset(void) {
+    _SFR_MEM8(addr_port) |= _BV(addr_bit);
+    for (uint16_t i=500; i>0; i--) {
+      uunit_delay3();
+    }
+    _SFR_MEM8(addr_port) &= ~_BV(addr_bit);
+    for (uint16_t i=500; i>0; i--) {
+      uunit_delay3();
+    }
+    _SFR_MEM8(addr_port) |= _BV(addr_bit);
 }
 
 void bit_pixel(uint8_t xlen, uint8_t *x) {
@@ -706,6 +710,7 @@ void bit_pixel(uint8_t xlen, uint8_t *x) {
     ( *x & (uint8_t) 0x04 ) ? pixel_1() : pixel_0();
     ( *x & (uint8_t) 0x02 ) ? pixel_1() : pixel_0();
     ( *x & (uint8_t) 0x01 ) ? pixel_1() : pixel_0();
+    x++;
   }
   print_sP(PSTR("LED PIXEL OUTPUT END\n"));
 }
@@ -1619,13 +1624,13 @@ int main(void) {
             }
           }
         } else if (!strcmp_P(token_sub1, PSTR("BTX"))) {
-          if (token_sub2 == NULL) {
+          if ((token_sub2 == NULL) || (*token_sub2 == '\0')) {
             uunit1 = 5;
             uunit3 = 15;
           } else {
             uunit1 = str2word(token_sub2);
           }
-          if (token_sub3 == NULL) {
+          if ((token_sub3 == NULL) || (*token_sub3 == '\0')) {
             uunit3 = 3 * uunit1;
           } else {
             uunit3 = str2word(token_sub3);
@@ -1650,6 +1655,8 @@ int main(void) {
             ledlen = bit_pixel_set(token_sub2, pixled);
           }
           bit_pixel_dump(ledlen, pixled);
+        } else if (!strcmp_P(token_sub1, PSTR("BXX"))) {
+          pixel_reset();
         //
         ///////////////////////////////////////////////////////////////
         //

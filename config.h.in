@@ -40,7 +40,7 @@
 // 32+64+160+2048 B SRAM (2KB)
 #define MIN_SRAM 0x20
 #define MAX_SRAM 0x8ff
-#define DATASIZE ( 1024 / 2)
+#define DATASIZE 256
 // 32 KB FLASH (program memory)
 #define MAX_FLASH 0x7fff
 #define LED_PIN "B5"
@@ -56,7 +56,7 @@
 // 32+64+160+2048+512 B SRAM (2.5KB)
 #define MIN_SRAM 0x20
 #define MAX_SRAM 0xaff
-#define DATASIZE ( 1536 / 2 )
+#define DATASIZE 512
 // 32 KB FLASH (program memory)
 #define MAX_FLASH 0x7fff
 #define LED_PIN "D6"
@@ -72,7 +72,7 @@
 // 32+64+160+2048 B SRAM (8KB)
 #define MIN_SRAM 0x20
 #define MAX_SRAM 0x20ff
-#define DATASIZE ( 4096 / 2 )
+#define DATASIZE 1024
 // 64 KB FLASH (program memory) addressable by BYTE
 // device has 128KB but high memory area isn't accessible with this program
 #define MAX_FLASH 0xffff

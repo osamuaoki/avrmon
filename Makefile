@@ -352,7 +352,9 @@ AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
 AVRDUDE_FLAGS += $(AVRDUDE_NO_VERIFY)
 AVRDUDE_FLAGS += $(AVRDUDE_VERBOSE)
 AVRDUDE_FLAGS += $(AVRDUDE_ERASE_COUNTER)
-
+ifeq ($(PROGRAMMER),arduino)
+AVRDUDE_FLAGS += -b 9600
+endif
 #---------------- Programming Options (dfu-programmer) ----------------
 
 # Programming hardware with DFU
