@@ -1,4 +1,5 @@
 #!/usr/bin/sh -e
-MKTARGET=${1:-program}
+MKTARGET=${1:-all}
 MKBOARD=${2:-teensy2pp}
 make BOARD="$MKBOARD" PROGRAMMER=hid "$MKTARGET"
+mv main.hex "avrmon-${MKBOARD}.hex"
